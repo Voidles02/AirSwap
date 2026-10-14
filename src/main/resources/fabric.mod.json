@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "airswap",
+  "version": "${version}",
+  "name": "Air Swap",
+  "description": "Client-side airborne sword-to-mace switching. Combat automation: use only where the server explicitly permits it. Server-authoritative damage is not guaranteed.",
+  "authors": ["voidles02"],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.KDI.airswap.AirSwapClient"],
+    "modmenu": ["dev.KDI.airswap.config.AirSwapModMenu"]
+  },
+  "mixins": [
+    {
+      "config": "airswap.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.2",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": ">=17.0.0",
+    "yet_another_config_lib_v3": ">=3.8.0"
+  }
+}
