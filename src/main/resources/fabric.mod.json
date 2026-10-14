@@ -3,7 +3,7 @@
   "id": "airswap",
   "version": "${version}",
   "name": "Air Swap",
-  "description": "Client-side airborne sword-to-mace switching. Combat automation: use only where the server explicitly permits it. Server-authoritative damage is not guaranteed.",
+  "description": "Client-side airborne sword/spear-to-mace switching, including configurable elytra gliding. Combat automation: use only where the server explicitly permits it. Server-authoritative damage is not guaranteed.",
   "authors": ["voidles02"],
   "license": "All-Rights-Reserved",
   "environment": "client",

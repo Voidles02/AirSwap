@@ -28,14 +28,17 @@ public final class AirSwapController {
                 || pending != null || tick < nextSwapTick || player.currentScreenHandler != player.playerScreenHandler
                 || (config.playersOnly && !(target instanceof PlayerEntity))
                 || player.isOnGround() || player.isTouchingWater() || player.isInLava()
-                || player.isClimbing() || player.isGliding()
+                || player.isClimbing() || (player.isGliding() && !config.allowWhileGliding)
                 || (config.disableWhenSneaking && player.isSneaking())
                 || player.fallDistance < config.minimumFallDistance) {
             return false;
         }
-        ItemStack sword = player.getMainHandStack();
-        if (!sword.isIn(ItemTags.SWORDS)
-                || (!config.allSwords && !config.allowedSwords.contains(Registries.ITEM.getId(sword.getItem()).toString()))) {
+        ItemStack weapon = player.getMainHandStack();
+        boolean isSword = weapon.isIn(ItemTags.SWORDS);
+        boolean isSpear = weapon.isIn(ItemTags.SPEARS);
+        if ((!isSword && !(config.allowSpears && isSpear))
+                || (isSword && !config.allSwords
+                && !config.allowedSwords.contains(Registries.ITEM.getId(weapon.getItem()).toString()))) {
             return false;
         }
         PlayerInventory inventory = player.getInventory();
@@ -48,7 +51,7 @@ public final class AirSwapController {
             }
         }
         int inventorySlot = -1;
-        ItemStack storedSword = sword.copy();
+        ItemStack storedSword = weapon.copy();
         if (maceSlot < 0 && !config.onlyHotbar) {
             for (int slot = PlayerInventory.HOTBAR_SIZE; slot < PlayerInventory.MAIN_SIZE; slot++) {
                 if (inventory.getStack(slot).isOf(Items.MACE)) {

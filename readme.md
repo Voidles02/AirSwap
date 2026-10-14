@@ -1,6 +1,8 @@
 # Air Swap
 
-A **client-only Fabric 1.21.11** mod that selects a mace before an airborne sword attack. Includes live JSON configuration, an unbound toggle key, and an optional YACL settings screen integrated with Mod Menu.
+Version **1.1.0**
+
+A **client-only Fabric 1.21.11** mod that selects a mace before an airborne sword or spear attack. Elytra gliding can also trigger swaps. Includes live JSON configuration, an unbound toggle key, and an optional YACL settings screen integrated with Mod Menu.
 
 ## Public-server warning
 
@@ -16,9 +18,9 @@ A **client-only Fabric 1.21.11** mod that selects a mace before an airborne swor
 
 On a qualifying attack, Air Swap changes the selected hotbar slot **inside the same client attack call**, before vanilla synchronizes the selected slot and sends the attack packet. Vanilla's selected-slot synchronization sends the ordinary slot-change packet before the attack packet when the selected slot has changed.
 
-**This is ordered weapon switching, not a guaranteed attribute exploit.** A client-only mod cannot force a server to combine sword damage or attack speed with mace attributes. The server owns damage calculation, attack cooldown, fall-distance validation, smash eligibility, inventory validation, and packet processing. A swap may produce an ordinary mace hit, reduced damage, a rejected action, or no smash. Client-side tick timing does not guarantee same-server-tick processing. An airborne attack while rising is not automatically a smash attack.
+**This is ordered weapon switching, not a guaranteed attribute exploit.** A client-only mod cannot force a server to combine sword or spear damage or attack speed with mace attributes. The server owns damage calculation, attack cooldown, fall-distance validation, smash eligibility, inventory validation, and packet processing. A swap may produce an ordinary mace hit, reduced damage, a rejected action, or no smash. Client-side tick timing does not guarantee same-server-tick processing. An airborne attack while rising or gliding is not automatically a smash attack.
 
-The mod does not modify damage packets, invent fall distance, change weapon statistics, or add server-side combat logic. Lag, server plugins, anti-cheat, and other combat mods can change the outcome. Zero-delay returns and main-inventory exchanges are particularly sensitive to server behavior.
+The mod does not modify damage packets, invent fall distance, change weapon statistics, or add server-side combat logic. Lag, server plugins, anti-cheat, and other combat mods can change the outcome. Immediate returns and main-inventory exchanges remain subject to server validation and timing.
 
 ## Installation
 
@@ -43,12 +45,12 @@ The project targets Java 21, Yarn `1.21.11+build.5`, Fabric API `0.141.4+1.21.11
 
 ## Using Air Swap
 
-1. Obtain a normal sword and a mace through vanilla survival progression. Air Swap adds no items, recipes, or creative-only equipment.
+1. Obtain a sword or spear and a mace through vanilla survival progression. Air Swap adds no items, recipes, or creative-only equipment.
 2. Put the sword and mace in your hotbar. Hold the sword.
 3. While airborne, attack another player **only in a world where you have permission to test this**. With `playersOnly` disabled, other entity attacks can trigger the swap too.
-4. The first mace in hotbar slots **1–9**, searched left to right, is selected before the attack. By default, the original sword is selected again after one client tick.
+4. The first mace in hotbar slots **1–9**, searched left to right, is selected before the attack. By default, the original sword or spear is selected again immediately after the attack call.
 
-The player must not be grounded, touching water, in lava, climbing, or gliding with an elytra. The minimum fall-distance, sneaking, sword-list, master-enable, and configured swap-cooldown conditions must also pass. If any condition fails, the original attack runs normally without a new swap. Holding a mace already, holding a non-sword, having an empty hotbar, or having no eligible mace also leaves the attack alone.
+The player must not be grounded, touching water, in lava, or climbing. Gliding is allowed by default and can be disabled in settings. The minimum fall-distance, sneaking, weapon, master-enable, and configured swap-cooldown conditions must also pass. If any condition fails, the original attack runs normally without a new swap. Holding a mace already, holding an unsupported weapon, having an empty hotbar, or having no eligible mace also leaves the attack alone.
 
 ### Toggle key
 
@@ -64,9 +66,11 @@ Open **Mods → Air Swap → Config** with both Mod Menu and YACL installed. Eve
 | --- | --- | --- |
 | Enable mod | On | Master switch, shared with the toggle key. |
 | Swap back to sword | On | Schedule a safe return after the attack. |
-| Swap-back delay | 1 tick | Slider from 0–10 client ticks; 0 returns immediately after the attack call. |
+| Swap-back delay | 0 ticks | Slider from 0–10 client ticks; 0 returns immediately after the attack call for the quickest follow-up. |
 | Players only | On | Disable to allow other entity targets. |
 | Minimum fall distance | 0.0 blocks | Slider from 0.0–10.0 in 0.1-block steps. Zero also permits rising airborne attacks. |
+| Allow spear attacks | On | Vanilla and modded items tagged `minecraft:spears` can trigger swaps. |
+| Allow attacks while gliding | On | Allows the client swap during elytra gliding; does not guarantee a mace smash. |
 | Work with all swords | On | Recognize the `minecraft:swords` item tag, including properly tagged modded swords. |
 | Allowed swords | All seven vanilla sword IDs | Comma-separated item IDs, used only when all-swords mode is off. Items must still be in the swords tag. |
 | Only swap if mace is in hotbar | On | When off, permit a main-inventory exchange if no hotbar mace exists. |
@@ -76,7 +80,7 @@ Open **Mods → Air Swap → Config** with both Mod Menu and YACL installed. Eve
 
 ### Main-inventory mode
 
-If `onlyHotbar` is false and no hotbar mace exists, slots 10–36 are searched in order. The first mace is exchanged with the held sword using a standard inventory `SWAP` click **before** the attack. The sword temporarily moves into that inventory slot. No offhand or external-container slots are searched.
+If `onlyHotbar` is false and no hotbar mace exists, slots 10–36 are searched in order. The first mace is exchanged with the held weapon using a standard inventory `SWAP` click **before** the attack. The original weapon temporarily moves into that inventory slot. No offhand or external-container slots are searched.
 
 With swap-back enabled, the exchange is reversed after the configured delay, provided the original sword is still where expected and the current inventory state is safe. With swap-back disabled, the exchange stays in place. Server-side inventory validation can reject or correct exchanges; this mode is not a server-acceptance guarantee.
 
@@ -84,7 +88,7 @@ With swap-back enabled, the exchange is reversed after the configured delay, pro
 
 - Scrolling or selecting a different slot cancels a pending automatic return immediately. The mod does not later override that choice, even if you switch away and back during the delay.
 - Opening a screen cancels a pending return rather than clicking inside an inventory or container unexpectedly. In main-inventory mode, this can leave the temporary exchange in place; rearrange the items manually.
-- Returning requires that the original sword stack still matches and that a mace is still held in the expected slot. Changed items are not blindly overwritten.
+- Returning requires that the original weapon stack still matches and that a mace is still held in the expected slot. Changed items are not blindly overwritten.
 - A pending return is not replaced by rapid additional attacks. While the mace is held, subsequent attacks proceed normally with it.
 - Joining and disconnecting clear pending returns and the mod's swap cooldown. The normal attack call and vanilla attack cooldown are preserved.
 
@@ -96,9 +100,11 @@ The file is created at **`config/airswap.json`** in your Minecraft instance:
 {
   "enabled": true,
   "swapBack": true,
-  "swapBackDelay": 1,
+  "swapBackDelay": 0,
   "playersOnly": true,
   "minimumFallDistance": 0.0,
+  "allowSpears": true,
+  "allowWhileGliding": true,
   "allSwords": true,
   "allowedSwords": [
     "minecraft:wooden_sword",

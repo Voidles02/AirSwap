@@ -25,9 +25,11 @@ public final class AirSwapConfig {
 
     public boolean enabled = true;
     public boolean swapBack = true;
-    public int swapBackDelay = 1;
+    public int swapBackDelay = 0;
     public boolean playersOnly = true;
     public double minimumFallDistance = 0.0;
+    public boolean allowSpears = true;
+    public boolean allowWhileGliding = true;
     public boolean allSwords = true;
     public List<String> allowedSwords = new ArrayList<>(List.of(
             "minecraft:wooden_sword", "minecraft:stone_sword", "minecraft:copper_sword",
@@ -53,6 +55,8 @@ public final class AirSwapConfig {
         config.swapBackDelay = integer(root, "swapBackDelay", config.swapBackDelay, 0, 10);
         config.playersOnly = bool(root, "playersOnly", config.playersOnly);
         config.minimumFallDistance = number(root, "minimumFallDistance", config.minimumFallDistance, 0.0, 10.0);
+        config.allowSpears = bool(root, "allowSpears", config.allowSpears);
+        config.allowWhileGliding = bool(root, "allowWhileGliding", config.allowWhileGliding);
         config.allSwords = bool(root, "allSwords", config.allSwords);
         config.onlyHotbar = bool(root, "onlyHotbar", config.onlyHotbar);
         config.showSwapMessage = bool(root, "showSwapMessage", config.showSwapMessage);

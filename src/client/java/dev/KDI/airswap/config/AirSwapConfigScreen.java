@@ -4,6 +4,7 @@ import dev.isxander.yacl3.api.ButtonOption;
 import dev.isxander.yacl3.api.ConfigCategory;
 import dev.isxander.yacl3.api.Option;
 import dev.isxander.yacl3.api.OptionDescription;
+import dev.isxander.yacl3.api.OptionGroup;
 import dev.isxander.yacl3.api.YetAnotherConfigLib;
 import dev.isxander.yacl3.api.controller.DoubleSliderControllerBuilder;
 import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
@@ -58,27 +59,41 @@ public final class AirSwapConfigScreen {
                 .category(ConfigCategory.createBuilder()
                         .name(Text.translatable("config.airswap.general"))
                         .tooltip(Text.translatable("config.airswap.warning"))
-                        .option(bool("enabled", defaults.enabled,
-                                () -> AirSwapClient.config().enabled, value -> AirSwapClient.config().enabled = value))
-                        .option(bool("swap_back", defaults.swapBack,
-                                () -> AirSwapClient.config().swapBack, value -> AirSwapClient.config().swapBack = value))
-                        .option(integer("swap_back_delay", defaults.swapBackDelay, 0, 10,
-                                () -> AirSwapClient.config().swapBackDelay, value -> AirSwapClient.config().swapBackDelay = value))
-                        .option(bool("players_only", defaults.playersOnly,
-                                () -> AirSwapClient.config().playersOnly, value -> AirSwapClient.config().playersOnly = value))
-                        .option(decimal("minimum_fall_distance", defaults.minimumFallDistance,
-                                () -> AirSwapClient.config().minimumFallDistance,
-                                value -> AirSwapClient.config().minimumFallDistance = value))
-                        .option(allSwords)
-                        .option(allowedSwords)
-                        .option(bool("only_hotbar", defaults.onlyHotbar,
-                                () -> AirSwapClient.config().onlyHotbar, value -> AirSwapClient.config().onlyHotbar = value))
-                        .option(bool("show_swap_message", defaults.showSwapMessage,
-                                () -> AirSwapClient.config().showSwapMessage, value -> AirSwapClient.config().showSwapMessage = value))
-                        .option(bool("disable_when_sneaking", defaults.disableWhenSneaking,
-                                () -> AirSwapClient.config().disableWhenSneaking, value -> AirSwapClient.config().disableWhenSneaking = value))
-                        .option(integer("cooldown_ticks", defaults.cooldownTicks, 0, 20,
-                                () -> AirSwapClient.config().cooldownTicks, value -> AirSwapClient.config().cooldownTicks = value))
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.translatable("config.airswap.group.swap"))
+                                .option(bool("enabled", defaults.enabled,
+                                        () -> AirSwapClient.config().enabled, value -> AirSwapClient.config().enabled = value))
+                                .option(bool("swap_back", defaults.swapBack,
+                                        () -> AirSwapClient.config().swapBack, value -> AirSwapClient.config().swapBack = value))
+                                .option(integer("swap_back_delay", defaults.swapBackDelay, 0, 10,
+                                        () -> AirSwapClient.config().swapBackDelay, value -> AirSwapClient.config().swapBackDelay = value))
+                                .option(bool("only_hotbar", defaults.onlyHotbar,
+                                        () -> AirSwapClient.config().onlyHotbar, value -> AirSwapClient.config().onlyHotbar = value))
+                                .option(integer("cooldown_ticks", defaults.cooldownTicks, 0, 20,
+                                        () -> AirSwapClient.config().cooldownTicks, value -> AirSwapClient.config().cooldownTicks = value))
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.translatable("config.airswap.group.triggers"))
+                                .option(bool("players_only", defaults.playersOnly,
+                                        () -> AirSwapClient.config().playersOnly, value -> AirSwapClient.config().playersOnly = value))
+                                .option(decimal("minimum_fall_distance", defaults.minimumFallDistance,
+                                        () -> AirSwapClient.config().minimumFallDistance,
+                                        value -> AirSwapClient.config().minimumFallDistance = value))
+                                .option(bool("allow_spears", defaults.allowSpears,
+                                        () -> AirSwapClient.config().allowSpears, value -> AirSwapClient.config().allowSpears = value))
+                                .option(bool("allow_while_gliding", defaults.allowWhileGliding,
+                                        () -> AirSwapClient.config().allowWhileGliding,
+                                        value -> AirSwapClient.config().allowWhileGliding = value))
+                                .option(allSwords)
+                                .option(allowedSwords)
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.translatable("config.airswap.group.display"))
+                                .option(bool("show_swap_message", defaults.showSwapMessage,
+                                        () -> AirSwapClient.config().showSwapMessage, value -> AirSwapClient.config().showSwapMessage = value))
+                                .option(bool("disable_when_sneaking", defaults.disableWhenSneaking,
+                                        () -> AirSwapClient.config().disableWhenSneaking, value -> AirSwapClient.config().disableWhenSneaking = value))
+                                .build())
                         .option(ButtonOption.createBuilder()
                                 .name(name("reset"))
                                 .description(description("reset"))
@@ -157,6 +172,8 @@ public final class AirSwapConfigScreen {
         config.swapBackDelay = defaults.swapBackDelay;
         config.playersOnly = defaults.playersOnly;
         config.minimumFallDistance = defaults.minimumFallDistance;
+        config.allowSpears = defaults.allowSpears;
+        config.allowWhileGliding = defaults.allowWhileGliding;
         config.allSwords = defaults.allSwords;
         config.allowedSwords = defaults.allowedSwords;
         config.onlyHotbar = defaults.onlyHotbar;
