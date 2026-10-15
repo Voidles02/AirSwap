@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class AirSwapConfigScreen {
+    private static final String DISPLAY_VERSION = "1.4.0";
     private static final Set<Screen> SCREENS = Collections.newSetFromMap(new WeakHashMap<>());
 
     static {
@@ -53,46 +54,45 @@ public final class AirSwapConfigScreen {
                 .build();
         allowedSwords.addListener((option, value) -> AirSwapClient.config().allowedSwords = parseSwordList(value));
         allSwords.addListener((option, value) -> allowedSwords.setAvailable(!value));
+        Option<Boolean> requireBreachMace = bool("require_breach_mace", defaults.requireBreachMace,
+                () -> AirSwapClient.config().requireBreachMace,
+                value -> AirSwapClient.config().requireBreachMace = value);
+        Option<Boolean> preferBreachMace = bool("prefer_breach_mace", defaults.preferBreachMace,
+                () -> AirSwapClient.config().preferBreachMace,
+                value -> AirSwapClient.config().preferBreachMace = value);
+        preferBreachMace.setAvailable(!AirSwapClient.config().requireBreachMace);
+        requireBreachMace.addListener((option, value) -> preferBreachMace.setAvailable(!value));
 
         Screen screen = YetAnotherConfigLib.createBuilder()
-                .title(Text.translatable("config.airswap.title"))
+                .title(Text.translatable("config.airswap.title", DISPLAY_VERSION))
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.translatable("config.airswap.general"))
-                        .tooltip(Text.translatable("config.airswap.warning"))
+                        .name(Text.translatable("config.airswap.category.swap"))
+                        .tooltip(Text.translatable("config.airswap.category.swap.tooltip"))
                         .group(OptionGroup.createBuilder()
                                 .name(Text.translatable("config.airswap.group.swap"))
+                                .description(OptionDescription.of(Text.translatable("config.airswap.group.swap.tooltip")))
                                 .option(bool("enabled", defaults.enabled,
                                         () -> AirSwapClient.config().enabled, value -> AirSwapClient.config().enabled = value))
                                 .option(bool("swap_back", defaults.swapBack,
                                         () -> AirSwapClient.config().swapBack, value -> AirSwapClient.config().swapBack = value))
                                 .option(integer("swap_back_delay", defaults.swapBackDelay, 0, 10,
                                         () -> AirSwapClient.config().swapBackDelay, value -> AirSwapClient.config().swapBackDelay = value))
-                                .option(bool("only_hotbar", defaults.onlyHotbar,
-                                        () -> AirSwapClient.config().onlyHotbar, value -> AirSwapClient.config().onlyHotbar = value))
                                 .option(integer("cooldown_ticks", defaults.cooldownTicks, 0, 20,
                                         () -> AirSwapClient.config().cooldownTicks, value -> AirSwapClient.config().cooldownTicks = value))
                                 .build())
                         .group(OptionGroup.createBuilder()
-                                .name(Text.translatable("config.airswap.group.triggers"))
-                                .option(bool("players_only", defaults.playersOnly,
-                                        () -> AirSwapClient.config().playersOnly, value -> AirSwapClient.config().playersOnly = value))
-                                .option(decimal("minimum_fall_distance", defaults.minimumFallDistance,
-                                        () -> AirSwapClient.config().minimumFallDistance,
-                                        value -> AirSwapClient.config().minimumFallDistance = value))
-                                .option(bool("allow_spears", defaults.allowSpears,
-                                        () -> AirSwapClient.config().allowSpears, value -> AirSwapClient.config().allowSpears = value))
-                                .option(bool("allow_while_gliding", defaults.allowWhileGliding,
-                                        () -> AirSwapClient.config().allowWhileGliding,
-                                        value -> AirSwapClient.config().allowWhileGliding = value))
-                                .option(allSwords)
-                                .option(allowedSwords)
-                                .build())
-                        .group(OptionGroup.createBuilder()
-                                .name(Text.translatable("config.airswap.group.display"))
-                                .option(bool("show_swap_message", defaults.showSwapMessage,
-                                        () -> AirSwapClient.config().showSwapMessage, value -> AirSwapClient.config().showSwapMessage = value))
-                                .option(bool("disable_when_sneaking", defaults.disableWhenSneaking,
-                                        () -> AirSwapClient.config().disableWhenSneaking, value -> AirSwapClient.config().disableWhenSneaking = value))
+                                .name(Text.translatable("config.airswap.group.mace"))
+                                .description(OptionDescription.of(Text.translatable("config.airswap.group.mace.tooltip")))
+                                .option(bool("only_hotbar", defaults.onlyHotbar,
+                                        () -> AirSwapClient.config().onlyHotbar, value -> AirSwapClient.config().onlyHotbar = value))
+                                .option(requireBreachMace)
+                                .option(preferBreachMace)
+                                .option(bool("avoid_nearly_broken_maces", defaults.avoidNearlyBrokenMaces,
+                                        () -> AirSwapClient.config().avoidNearlyBrokenMaces,
+                                        value -> AirSwapClient.config().avoidNearlyBrokenMaces = value))
+                                .option(bool("prefer_most_durable_mace", defaults.preferMostDurableMace,
+                                        () -> AirSwapClient.config().preferMostDurableMace,
+                                        value -> AirSwapClient.config().preferMostDurableMace = value))
                                 .build())
                         .option(ButtonOption.createBuilder()
                                 .name(name("reset"))
@@ -102,6 +102,65 @@ public final class AirSwapConfigScreen {
                                     AirSwapClient.saveConfig();
                                     MinecraftClient.getInstance().setScreen(create(parent));
                                 })
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.translatable("config.airswap.category.weapons"))
+                        .tooltip(Text.translatable("config.airswap.category.weapons.tooltip"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.translatable("config.airswap.group.swords"))
+                                .description(OptionDescription.of(Text.translatable("config.airswap.group.swords.tooltip")))
+                                .option(allSwords)
+                                .option(allowedSwords)
+                                .build())
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.translatable("config.airswap.group.spears"))
+                                .description(OptionDescription.of(Text.translatable("config.airswap.group.spears.tooltip")))
+                                .option(bool("allow_spears", defaults.allowSpears,
+                                        () -> AirSwapClient.config().allowSpears, value -> AirSwapClient.config().allowSpears = value))
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.translatable("config.airswap.category.triggers"))
+                        .tooltip(Text.translatable("config.airswap.category.triggers.tooltip"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.translatable("config.airswap.group.triggers"))
+                                .option(bool("players_only", defaults.playersOnly,
+                                        () -> AirSwapClient.config().playersOnly, value -> AirSwapClient.config().playersOnly = value))
+                                .option(decimal("minimum_fall_distance", defaults.minimumFallDistance,
+                                        () -> AirSwapClient.config().minimumFallDistance,
+                                        value -> AirSwapClient.config().minimumFallDistance = value))
+                                .option(bool("allow_while_gliding", defaults.allowWhileGliding,
+                                        () -> AirSwapClient.config().allowWhileGliding,
+                                        value -> AirSwapClient.config().allowWhileGliding = value))
+                                .option(bool("disable_when_sneaking", defaults.disableWhenSneaking,
+                                        () -> AirSwapClient.config().disableWhenSneaking, value -> AirSwapClient.config().disableWhenSneaking = value))
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.translatable("config.airswap.category.qol"))
+                        .tooltip(Text.translatable("config.airswap.category.qol.tooltip"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.translatable("config.airswap.group.qol"))
+                                .description(OptionDescription.of(Text.translatable("config.airswap.group.qol.tooltip")))
+                                .option(bool("only_while_falling", defaults.onlyWhileFalling,
+                                        () -> AirSwapClient.config().onlyWhileFalling,
+                                        value -> AirSwapClient.config().onlyWhileFalling = value))
+                                .option(bool("require_attack_cooldown", defaults.requireAttackCooldown,
+                                        () -> AirSwapClient.config().requireAttackCooldown,
+                                        value -> AirSwapClient.config().requireAttackCooldown = value))
+                                .option(bool("require_line_of_sight", defaults.requireLineOfSight,
+                                        () -> AirSwapClient.config().requireLineOfSight,
+                                        value -> AirSwapClient.config().requireLineOfSight = value))
+                                .build())
+                        .build())
+                .category(ConfigCategory.createBuilder()
+                        .name(Text.translatable("config.airswap.category.feedback"))
+                        .tooltip(Text.translatable("config.airswap.category.feedback.tooltip"))
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.translatable("config.airswap.group.display"))
+                                .option(bool("show_swap_message", defaults.showSwapMessage,
+                                        () -> AirSwapClient.config().showSwapMessage, value -> AirSwapClient.config().showSwapMessage = value))
                                 .build())
                         .build())
                 .save(AirSwapClient::saveConfig)
@@ -174,11 +233,18 @@ public final class AirSwapConfigScreen {
         config.minimumFallDistance = defaults.minimumFallDistance;
         config.allowSpears = defaults.allowSpears;
         config.allowWhileGliding = defaults.allowWhileGliding;
+        config.requireBreachMace = defaults.requireBreachMace;
+        config.preferBreachMace = defaults.preferBreachMace;
         config.allSwords = defaults.allSwords;
         config.allowedSwords = defaults.allowedSwords;
         config.onlyHotbar = defaults.onlyHotbar;
         config.showSwapMessage = defaults.showSwapMessage;
         config.disableWhenSneaking = defaults.disableWhenSneaking;
         config.cooldownTicks = defaults.cooldownTicks;
+        config.onlyWhileFalling = defaults.onlyWhileFalling;
+        config.requireAttackCooldown = defaults.requireAttackCooldown;
+        config.requireLineOfSight = defaults.requireLineOfSight;
+        config.avoidNearlyBrokenMaces = defaults.avoidNearlyBrokenMaces;
+        config.preferMostDurableMace = defaults.preferMostDurableMace;
     }
 }

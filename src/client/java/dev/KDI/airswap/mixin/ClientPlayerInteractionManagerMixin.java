@@ -12,9 +12,8 @@ import org.spongepowered.asm.mixin.Mixin;
 public abstract class ClientPlayerInteractionManagerMixin {
     @WrapMethod(method = "attackEntity(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/entity/Entity;)V")
     private void airswap$attack(PlayerEntity player, Entity target, Operation<Void> original) {
-        boolean swapped = false;
         try {
-            swapped = AirSwapClient.CONTROLLER.beforeAttack(player, target);
+            AirSwapClient.CONTROLLER.beforeAttack(player, target);
         } catch (RuntimeException exception) {
             AirSwapClient.LOGGER.warn("Air Swap could not prepare the slot swap; allowing the attack to continue", exception);
         }
@@ -22,7 +21,7 @@ public abstract class ClientPlayerInteractionManagerMixin {
             original.call(player, target);
         } finally {
             try {
-                AirSwapClient.CONTROLLER.afterAttack(swapped);
+                AirSwapClient.CONTROLLER.afterAttack();
             } catch (RuntimeException exception) {
                 AirSwapClient.LOGGER.warn("Air Swap could not finish restoring the selected slot", exception);
             }

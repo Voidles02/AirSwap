@@ -1,8 +1,8 @@
 # Air Swap
 
-Version **1.1.0**
+Version **1.4.0**
 
-A **client-only Fabric 1.21.11** mod that selects a mace before an airborne sword or spear attack. Elytra gliding can also trigger swaps. Includes live JSON configuration, an unbound toggle key, and an optional YACL settings screen integrated with Mod Menu.
+A **client-only Fabric 1.21.11** mod that selects a mace before an airborne sword or tagged spear attack, then automatically returns to the original weapon after the attack call on both hit and miss. Version 1.4.0 adds five optional gameplay filters, durability-aware mace selection, a reorganized settings screen, and a mod-list icon. Air Swap includes live JSON configuration, an unbound toggle key, and an optional YACL settings screen integrated with Mod Menu.
 
 ## Public-server warning
 
@@ -26,7 +26,7 @@ The mod does not modify damage packets, invent fall distance, change weapon stat
 
 1. Use Minecraft **1.21.11** with Fabric Loader **0.19.2 or newer**.
 2. Put the Air Swap JAR and Fabric API for 1.21.11 in your client instance's `mods` folder.
-3. For the settings screen, also install compatible **Mod Menu** and **Yet Another Config Lib (YACL)** versions if they are not included with your mod download.
+3. For the settings screen, install compatible **Mod Menu** and **Yet Another Config Lib (YACL)** versions if they are not included with your mod download.
 4. Launch the client. Do not install Air Swap on a dedicated server.
 
 Mod Menu and YACL are **optional runtime integrations**: neither is listed under required dependencies. Without Mod Menu, use the JSON file and toggle key. With Mod Menu but without YACL, the Config screen is unavailable; the mod still runs from JSON. YACL code is isolated from the normal client initializer and only reached when the screen is requested with YACL installed.
@@ -48,7 +48,7 @@ The project targets Java 21, Yarn `1.21.11+build.5`, Fabric API `0.141.4+1.21.11
 1. Obtain a sword or spear and a mace through vanilla survival progression. Air Swap adds no items, recipes, or creative-only equipment.
 2. Put the sword and mace in your hotbar. Hold the sword.
 3. While airborne, attack another player **only in a world where you have permission to test this**. With `playersOnly` disabled, other entity attacks can trigger the swap too.
-4. The first mace in hotbar slots **1–9**, searched left to right, is selected before the attack. By default, the original sword or spear is selected again immediately after the attack call.
+4. By default, a Breach-enchanted mace is preferred within the searched slots; if none is found, the first mace is selected. You can instead require a Breach mace, in which case Air Swap does nothing unless one is in the searched slots. The original sword or spear is selected again immediately after the attack call, whether the attack hits or misses.
 
 The player must not be grounded, touching water, in lava, or climbing. Gliding is allowed by default and can be disabled in settings. The minimum fall-distance, sneaking, weapon, master-enable, and configured swap-cooldown conditions must also pass. If any condition fails, the original attack runs normally without a new swap. Holding a mace already, holding an unsupported weapon, having an empty hotbar, or having no eligible mace also leaves the attack alone.
 
@@ -60,35 +60,42 @@ New configurations default to enabled. An explicitly saved disabled setting is r
 
 ### Settings screen
 
-Open **Mods → Air Swap → Config** with both Mod Menu and YACL installed. Every setting has a tooltip. Changes update the live configuration as controls change; no restart or world rejoin is needed. The screen saves on removal/close and through YACL's save action. Because changes are live, closing the screen is not an undo operation. **Reset to defaults** immediately resets all mod settings, saves them, and refreshes the screen; it does not erase your Minecraft keybinding.
+Open **Mods → Air Swap → Config** with both Mod Menu and YACL installed. Settings are organized into **Swap & Mace**, **Weapons**, **Conditions**, **Gameplay**, and **Feedback** tabs. Every setting has a tooltip. Changes update the live configuration as controls change; no restart or world rejoin is needed. The screen saves on removal/close and through YACL's save action. Because changes are live, closing the screen is not an undo operation. **Reset to defaults** immediately resets all mod settings, saves them, and refreshes the screen; it does not erase your Minecraft keybinding.
 
 | Setting | Default | Behavior |
 | --- | --- | --- |
 | Enable mod | On | Master switch, shared with the toggle key. |
-| Swap back to sword | On | Schedule a safe return after the attack. |
+| Swap back to original weapon | On | Schedule a safe return after the attack. |
 | Swap-back delay | 0 ticks | Slider from 0–10 client ticks; 0 returns immediately after the attack call for the quickest follow-up. |
 | Players only | On | Disable to allow other entity targets. |
 | Minimum fall distance | 0.0 blocks | Slider from 0.0–10.0 in 0.1-block steps. Zero also permits rising airborne attacks. |
-| Allow spear attacks | On | Vanilla and modded items tagged `minecraft:spears` can trigger swaps. |
+| Enable spear-to-mace swaps | On | Vanilla and modded items tagged `minecraft:spears` can trigger swaps. Turn off to allow sword triggers only. |
 | Allow attacks while gliding | On | Allows the client swap during elytra gliding; does not guarantee a mace smash. |
+| Require a Breach-enchanted mace | Off | Swap only when a Breach-enchanted mace is available; there is no non-Breach fallback. Disables the preference option below. |
+| Prefer a Breach-enchanted mace | On | When Breach is not required, select a Breach-enchanted vanilla mace before other maces; otherwise use the first mace. |
 | Work with all swords | On | Recognize the `minecraft:swords` item tag, including properly tagged modded swords. |
 | Allowed swords | All seven vanilla sword IDs | Comma-separated item IDs, used only when all-swords mode is off. Items must still be in the swords tag. |
 | Only swap if mace is in hotbar | On | When off, permit a main-inventory exchange if no hotbar mace exists. |
 | Show swap message | Off | Display the selected mace slot in the action bar. |
 | Disable when sneaking | Off | Suppress new swaps while sneaking. |
 | Cooldown between swaps | 0 ticks | Slider from 0–20 client ticks. This is separate from vanilla attack cooldown. |
+| Swap only while descending | Off | Do not swap while rising or stationary in the air. |
+| Require a cooled attack | Off | Wait until vanilla attack cooldown is at least 90% ready. This does not change vanilla damage. |
+| Require line of sight | Off | Skip a swap when the target is not visible to the player. |
+| Avoid nearly broken maces | On | Skip maces at 5% durability or less; if none remain, no swap occurs. |
+| Prefer the most durable mace | Off | Choose the eligible mace with the most remaining durability; Breach preference/requirement still takes priority. |
 
 ### Main-inventory mode
 
-If `onlyHotbar` is false and no hotbar mace exists, slots 10–36 are searched in order. The first mace is exchanged with the held weapon using a standard inventory `SWAP` click **before** the attack. The original weapon temporarily moves into that inventory slot. No offhand or external-container slots are searched.
+The search covers hotbar slots 1–9, or slots 1–36 when `onlyHotbar` is false. Nearly broken maces are skipped by default. With Breach required, only a Breach-enchanted vanilla mace is eligible. Otherwise, when Breach preference is enabled, an eligible Breach-enchanted mace takes priority; with preference disabled, Air Swap chooses an eligible mace. Enabling **Prefer the most durable mace** selects the eligible mace with the most durability remaining within that priority. If the chosen mace is in slots 10–36, it is exchanged with the held weapon using a standard inventory `SWAP` click **before** the attack. The original weapon temporarily moves into that inventory slot. No offhand or external-container slots are searched.
 
 With swap-back enabled, the exchange is reversed after the configured delay, provided the original sword is still where expected and the current inventory state is safe. With swap-back disabled, the exchange stays in place. Server-side inventory validation can reject or correct exchanges; this mode is not a server-acceptance guarantee.
 
 ### Manual input and repeated attacks
 
 - Scrolling or selecting a different slot cancels a pending automatic return immediately. The mod does not later override that choice, even if you switch away and back during the delay.
-- Opening a screen cancels a pending return rather than clicking inside an inventory or container unexpectedly. In main-inventory mode, this can leave the temporary exchange in place; rearrange the items manually.
-- Returning requires that the original weapon stack still matches and that a mace is still held in the expected slot. Changed items are not blindly overwritten.
+- Opening a screen pauses a pending return until the player inventory is safe to access again. If the player changes the selected slot or replaces the original weapon while the screen is open, the return is cancelled rather than overwriting the change.
+- Returning requires that a mace is still held in the expected slot and that the original weapon matches. Durability-only changes are tolerated; different items or other component changes are not overwritten.
 - A pending return is not replaced by rapid additional attacks. While the mace is held, subsequent attacks proceed normally with it.
 - Joining and disconnecting clear pending returns and the mod's swap cooldown. The normal attack call and vanilla attack cooldown are preserved.
 
@@ -105,6 +112,8 @@ The file is created at **`config/airswap.json`** in your Minecraft instance:
   "minimumFallDistance": 0.0,
   "allowSpears": true,
   "allowWhileGliding": true,
+  "requireBreachMace": false,
+  "preferBreachMace": true,
   "allSwords": true,
   "allowedSwords": [
     "minecraft:wooden_sword",
@@ -118,11 +127,16 @@ The file is created at **`config/airswap.json`** in your Minecraft instance:
   "onlyHotbar": true,
   "showSwapMessage": false,
   "disableWhenSneaking": false,
-  "cooldownTicks": 0
+  "cooldownTicks": 0,
+  "onlyWhileFalling": false,
+  "requireAttackCooldown": false,
+  "requireLineOfSight": false,
+  "avoidNearlyBrokenMaces": true,
+  "preferMostDurableMace": false
 }
 ```
 
-Settings are read from the current configuration on every attack. External file changes are checked every 20 client ticks and loaded without restarting or rejoining. Edit the file with the settings screen closed to avoid competing menu changes; give the client time to reload before making another in-game change.
+Settings are read from the current configuration on every attack. External file changes are checked every 20 client ticks and loaded without restarting or rejoining. A malformed edit keeps the last valid settings and is retried, so correcting the file does not require a restart. Edit the file with the settings screen closed to avoid competing menu changes; give the client time to reload before making another in-game change.
 
 - Missing settings, wrong JSON types, fractional integer values, non-finite numbers, and out-of-range numbers use the documented defaults.
 - Allowed sword IDs are trimmed, lowercased, and given the `minecraft:` namespace when omitted. Invalid ID strings are ignored; an entirely invalid nonempty list falls back to the default list. An explicit empty list is valid and allows no swords in restricted mode. Well-formed but nonexistent IDs never match an actual held sword.
@@ -141,8 +155,10 @@ air-swap/
 ├── readme.md
 └── src/
     ├── main/resources/
-    │   ├── fabric.mod.json
-    │   └── assets/airswap/lang/en_us.json
+│   ├── fabric.mod.json
+│   └── assets/airswap/
+│       ├── icon.png
+│       └── lang/en_us.json
     └── client/
         ├── resources/airswap.client.mixins.json
         └── java/dev/KDI/airswap/
@@ -163,3 +179,5 @@ air-swap/
 ## Compatibility notes
 
 This project specifically targets **Fabric 1.21.11 with Yarn mappings**. It is not a Forge/NeoForge mod, not a server plugin, and not a promise of compatibility with other Minecraft versions. Mods that cancel attacks, replace hotbar logic, or alter inventory synchronization can affect behavior. Do not rely on client animation or an action-bar message as proof that the server accepted a smash attack. Validate behavior in a permitted private world before considering any approved multiplayer use.
+
+BetterMaceSwap, Wind Launch, Mace Optimizer, and MaceOptimiser have no documented integration APIs available in this project, so Air Swap does not call their private code or add hard dependencies. Its attack wrapper uses MixinExtras' composable `@WrapMethod`, and swaps use ordinary vanilla selected-slot and inventory synchronization. This is best-effort coexistence, not verified full compatibility; behavior depends on each mod's implementation and mixin ordering.

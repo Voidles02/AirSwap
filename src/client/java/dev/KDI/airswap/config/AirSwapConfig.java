@@ -30,6 +30,8 @@ public final class AirSwapConfig {
     public double minimumFallDistance = 0.0;
     public boolean allowSpears = true;
     public boolean allowWhileGliding = true;
+    public boolean requireBreachMace = false;
+    public boolean preferBreachMace = true;
     public boolean allSwords = true;
     public List<String> allowedSwords = new ArrayList<>(List.of(
             "minecraft:wooden_sword", "minecraft:stone_sword", "minecraft:copper_sword",
@@ -39,6 +41,11 @@ public final class AirSwapConfig {
     public boolean showSwapMessage = false;
     public boolean disableWhenSneaking = false;
     public int cooldownTicks = 0;
+    public boolean onlyWhileFalling = false;
+    public boolean requireAttackCooldown = false;
+    public boolean requireLineOfSight = false;
+    public boolean avoidNearlyBrokenMaces = true;
+    public boolean preferMostDurableMace = false;
 
     public static AirSwapConfig read(Path path) throws IOException {
         JsonObject root;
@@ -57,11 +64,18 @@ public final class AirSwapConfig {
         config.minimumFallDistance = number(root, "minimumFallDistance", config.minimumFallDistance, 0.0, 10.0);
         config.allowSpears = bool(root, "allowSpears", config.allowSpears);
         config.allowWhileGliding = bool(root, "allowWhileGliding", config.allowWhileGliding);
+        config.requireBreachMace = bool(root, "requireBreachMace", config.requireBreachMace);
+        config.preferBreachMace = bool(root, "preferBreachMace", config.preferBreachMace);
         config.allSwords = bool(root, "allSwords", config.allSwords);
         config.onlyHotbar = bool(root, "onlyHotbar", config.onlyHotbar);
         config.showSwapMessage = bool(root, "showSwapMessage", config.showSwapMessage);
         config.disableWhenSneaking = bool(root, "disableWhenSneaking", config.disableWhenSneaking);
         config.cooldownTicks = integer(root, "cooldownTicks", config.cooldownTicks, 0, 20);
+        config.onlyWhileFalling = bool(root, "onlyWhileFalling", config.onlyWhileFalling);
+        config.requireAttackCooldown = bool(root, "requireAttackCooldown", config.requireAttackCooldown);
+        config.requireLineOfSight = bool(root, "requireLineOfSight", config.requireLineOfSight);
+        config.avoidNearlyBrokenMaces = bool(root, "avoidNearlyBrokenMaces", config.avoidNearlyBrokenMaces);
+        config.preferMostDurableMace = bool(root, "preferMostDurableMace", config.preferMostDurableMace);
         JsonElement allowed = root.get("allowedSwords");
         if (allowed != null && allowed.isJsonArray()) {
             List<String> valid = new ArrayList<>();

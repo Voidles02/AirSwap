@@ -78,8 +78,9 @@ public final class AirSwapClient implements ClientModInitializer {
             return;
         }
         try {
+            AirSwapConfig loaded = AirSwapConfig.read(CONFIG_PATH);
             recordFileState();
-            config = AirSwapConfig.read(CONFIG_PATH);
+            config = loaded;
         } catch (IOException | RuntimeException exception) {
             LOGGER.warn("Could not load airswap.json; keeping the last valid settings (defaults on first load)", exception);
         }
