@@ -2,11 +2,20 @@ plugins {
     id 'fabric-loom' version '1.14-SNAPSHOT'
 }
 
-version = project.mod_version
+def modVersion = providers.gradleProperty('mod_version').get()
+version = airswap-1.4.3
 group = project.maven_group
 
 base {
     archivesName = project.archives_base_name
+}
+
+tasks.named('jar') {
+    archiveVersion.set(modVersion)
+}
+
+tasks.named('remapJar') {
+    archiveVersion.set(modVersion)
 }
 
 repositories {
@@ -35,9 +44,12 @@ dependencies {
 }
 
 processResources {
-    inputs.property 'version', project.version
+    inputs.property 'version', modVersion
     filesMatching('fabric.mod.json') {
-        expand 'version': project.version
+        expand 'version': modVersion
+    }
+    filesMatching('assets/airswap/lang/en_us.json') {
+        expand 'version': modVersion
     }
 }
 

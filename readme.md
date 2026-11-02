@@ -1,8 +1,8 @@
 # Air Swap
 
-Version **1.4.0**
+Version **1.4.3**
 
-A **client-only Fabric 1.21.11** mod that selects a mace before an airborne sword or tagged spear attack, then automatically returns to the original weapon after the attack call on both hit and miss. Version 1.4.0 adds five optional gameplay filters, durability-aware mace selection, a reorganized settings screen, and a mod-list icon. Air Swap includes live JSON configuration, an unbound toggle key, and an optional YACL settings screen integrated with Mod Menu.
+A **client-only Fabric 1.21.11** mod that selects a mace before an airborne sword or tagged spear attack, then automatically returns to the original weapon after the attack call on both hit and miss. Version 1.4.3 synchronizes the JAR and in-game settings title directly from the Gradle version property, saves each settings change immediately, and automatically switches edited presets to Custom. Air Swap includes live JSON configuration, an unbound toggle key, and an optional YACL settings screen integrated with Mod Menu.
 
 ## Public-server warning
 
@@ -60,10 +60,13 @@ New configurations default to enabled. An explicitly saved disabled setting is r
 
 ### Settings screen
 
-Open **Mods → Air Swap → Config** with both Mod Menu and YACL installed. Settings are organized into **Swap & Mace**, **Weapons**, **Conditions**, **Gameplay**, and **Feedback** tabs. Every setting has a tooltip. Changes update the live configuration as controls change; no restart or world rejoin is needed. The screen saves on removal/close and through YACL's save action. Because changes are live, closing the screen is not an undo operation. **Reset to defaults** immediately resets all mod settings, saves them, and refreshes the screen; it does not erase your Minecraft keybinding.
+Open **Mods → Air Swap → Config** with both Mod Menu and YACL installed. Settings are organized into **Swap & Mace**, **Weapons**, **Conditions**, **Gameplay**, and **Feedback** tabs, with clear ON/OFF toggles, grouped options, and tooltips. The **Swap profile** button cycles through Legit, Default, and Custom; profile changes save immediately and refresh the screen. Legit applies conservative filters (hotbar-only, descending, cooled attack, visible player target, no gliding, sneaking disabled, and a one-tick cooldown); Default restores the standard behavior and settings. All individual settings can be edited from any profile; changing one immediately saves it and switches the active profile to Custom, preserving the other active values. Existing configuration files without a `mode` field are preserved as Custom so upgrades do not discard prior preferences. The screen also saves on removal/close and through YACL's save action. Because changes are live, closing the screen is not an undo operation. **Reset to defaults** immediately resets all mod settings, saves them, and refreshes the screen; it does not erase your Minecraft keybinding.
+
+**Legit is only the name of a conservative client-side preset. It does not make combat automation permitted, undetectable, or compatible with every anti-cheat. Always follow server rules and get permission.**
 
 | Setting | Default | Behavior |
 | --- | --- | --- |
+| Swap profile | Default | Legit and Default apply fixed presets; Custom enables the individual settings below. |
 | Enable mod | On | Master switch, shared with the toggle key. |
 | Swap back to original weapon | On | Schedule a safe return after the attack. |
 | Swap-back delay | 0 ticks | Slider from 0–10 client ticks; 0 returns immediately after the attack call for the quickest follow-up. |
@@ -106,6 +109,7 @@ The file is created at **`config/airswap.json`** in your Minecraft instance:
 ```json
 {
   "enabled": true,
+  "mode": "DEFAULT",
   "swapBack": true,
   "swapBackDelay": 0,
   "playersOnly": true,
@@ -136,7 +140,7 @@ The file is created at **`config/airswap.json`** in your Minecraft instance:
 }
 ```
 
-Settings are read from the current configuration on every attack. External file changes are checked every 20 client ticks and loaded without restarting or rejoining. A malformed edit keeps the last valid settings and is retried, so correcting the file does not require a restart. Edit the file with the settings screen closed to avoid competing menu changes; give the client time to reload before making another in-game change.
+Settings are read from the current configuration on every attack. External file changes are checked every 20 client ticks and loaded without restarting or rejoining. A malformed edit keeps the last valid settings and is retried, so correcting the file does not require a restart. `DEFAULT` and `LEGIT` profiles apply their documented presets when loaded; `CUSTOM` preserves individual settings. In-game edits and profile changes are written immediately using a temporary file and atomic replacement where supported, so a normal exit or unexpected crash does not discard the last completed setting change. Edit the file with the settings screen closed to avoid competing menu changes; give the client time to reload before making another in-game change.
 
 - Missing settings, wrong JSON types, fractional integer values, non-finite numbers, and out-of-range numbers use the documented defaults.
 - Allowed sword IDs are trimmed, lowercased, and given the `minecraft:` namespace when omitted. Invalid ID strings are ignored; an entirely invalid nonempty list falls back to the default list. An explicit empty list is valid and allows no swords in restricted mode. Well-formed but nonexistent IDs never match an actual held sword.
@@ -178,6 +182,6 @@ air-swap/
 
 ## Compatibility notes
 
-This project specifically targets **Fabric 1.21.11 with Yarn mappings**. It is not a Forge/NeoForge mod, not a server plugin, and not a promise of compatibility with other Minecraft versions. Mods that cancel attacks, replace hotbar logic, or alter inventory synchronization can affect behavior. Do not rely on client animation or an action-bar message as proof that the server accepted a smash attack. Validate behavior in a permitted private world before considering any approved multiplayer use.
+This project specifically targets **Fabric 1.21.11 with Yarn mappings**. It is not a Forge/NeoForge mod, not a server plugin, and not a promise of compatibility with other Minecraft versions. The Legit preset avoids main-inventory exchanges and adds conservative attack conditions; it cannot bypass server checks or grant permission to use automation. Mods that cancel attacks, replace hotbar logic, or alter inventory synchronization can affect behavior. Do not rely on client animation or an action-bar message as proof that the server accepted a smash attack. Validate behavior in a permitted private world before considering any approved multiplayer use.
 
 BetterMaceSwap, Wind Launch, Mace Optimizer, and MaceOptimiser have no documented integration APIs available in this project, so Air Swap does not call their private code or add hard dependencies. Its attack wrapper uses MixinExtras' composable `@WrapMethod`, and swaps use ordinary vanilla selected-slot and inventory synchronization. This is best-effort coexistence, not verified full compatibility; behavior depends on each mod's implementation and mixin ordering.

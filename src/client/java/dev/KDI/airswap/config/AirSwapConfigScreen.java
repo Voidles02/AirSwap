@@ -9,7 +9,7 @@ import dev.isxander.yacl3.api.YetAnotherConfigLib;
 import dev.isxander.yacl3.api.controller.DoubleSliderControllerBuilder;
 import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import dev.isxander.yacl3.api.controller.StringControllerBuilder;
-import dev.isxander.yacl3.api.controller.TickBoxControllerBuilder;
+import dev.isxander.yacl3.api.controller.BooleanControllerBuilder;
 import dev.KDI.airswap.AirSwapClient;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.MinecraftClient;
@@ -25,7 +25,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class AirSwapConfigScreen {
-    private static final String DISPLAY_VERSION = "1.4.0";
     private static final Set<Screen> SCREENS = Collections.newSetFromMap(new WeakHashMap<>());
 
     static {
@@ -41,6 +40,16 @@ public final class AirSwapConfigScreen {
 
     public static Screen create(Screen parent) {
         AirSwapConfig defaults = new AirSwapConfig();
+        AirSwapConfig config = AirSwapClient.config();
+        ButtonOption modeOption = ButtonOption.createBuilder()
+                .name(Text.translatable("config.airswap.mode", Text.translatable(config.mode.translationKey())))
+                .description(description("mode"))
+                .action((currentScreen, button) -> {
+                    AirSwapClient.config().setMode(AirSwapClient.config().mode.next());
+                    AirSwapClient.saveConfig();
+                    MinecraftClient.getInstance().setScreen(create(parent));
+                })
+                .build();
         Option<Boolean> allSwords = bool("all_swords", defaults.allSwords,
                 () -> AirSwapClient.config().allSwords, value -> AirSwapClient.config().allSwords = value);
         Option<String> allowedSwords = Option.<String>createBuilder()
@@ -50,9 +59,10 @@ public final class AirSwapConfigScreen {
                         () -> String.join(", ", AirSwapClient.config().allowedSwords),
                         value -> AirSwapClient.config().allowedSwords = parseSwordList(value))
                 .controller(StringControllerBuilder::create)
-                .available(!AirSwapClient.config().allSwords)
+                .available(!config.allSwords)
                 .build();
-        allowedSwords.addListener((option, value) -> AirSwapClient.config().allowedSwords = parseSwordList(value));
+        allowedSwords.addListener((option, value) -> updateSetting(
+                swords -> AirSwapClient.config().allowedSwords = swords, parseSwordList(value)));
         allSwords.addListener((option, value) -> allowedSwords.setAvailable(!value));
         Option<Boolean> requireBreachMace = bool("require_breach_mace", defaults.requireBreachMace,
                 () -> AirSwapClient.config().requireBreachMace,
@@ -60,17 +70,19 @@ public final class AirSwapConfigScreen {
         Option<Boolean> preferBreachMace = bool("prefer_breach_mace", defaults.preferBreachMace,
                 () -> AirSwapClient.config().preferBreachMace,
                 value -> AirSwapClient.config().preferBreachMace = value);
-        preferBreachMace.setAvailable(!AirSwapClient.config().requireBreachMace);
-        requireBreachMace.addListener((option, value) -> preferBreachMace.setAvailable(!value));
+        preferBreachMace.setAvailable(!config.requireBreachMace);
+        requireBreachMace.addListener((option, value) -> preferBreachMace.setAvailable(
+                !value));
 
         Screen screen = YetAnotherConfigLib.createBuilder()
-                .title(Text.translatable("config.airswap.title", DISPLAY_VERSION))
+                .title(Text.translatable("config.airswap.title"))
                 .category(ConfigCategory.createBuilder()
                         .name(Text.translatable("config.airswap.category.swap"))
                         .tooltip(Text.translatable("config.airswap.category.swap.tooltip"))
                         .group(OptionGroup.createBuilder()
                                 .name(Text.translatable("config.airswap.group.swap"))
                                 .description(OptionDescription.of(Text.translatable("config.airswap.group.swap.tooltip")))
+                                .option(modeOption)
                                 .option(bool("enabled", defaults.enabled,
                                         () -> AirSwapClient.config().enabled, value -> AirSwapClient.config().enabled = value))
                                 .option(bool("swap_back", defaults.swapBack,
@@ -175,9 +187,9 @@ public final class AirSwapConfigScreen {
                 .name(name(key))
                 .description(description(key))
                 .binding(defaultValue, getter, setter)
-                .controller(TickBoxControllerBuilder::create)
+                .controller(BooleanControllerBuilder::create)
                 .build();
-        option.addListener((changed, value) -> setter.accept(value));
+        option.addListener((changed, value) -> updateSetting(setter, value));
         return option;
     }
 
@@ -189,7 +201,7 @@ public final class AirSwapConfigScreen {
                 .binding(defaultValue, getter, setter)
                 .controller(value -> IntegerSliderControllerBuilder.create(value).range(min, max).step(1))
                 .build();
-        option.addListener((changed, value) -> setter.accept(value));
+        option.addListener((changed, value) -> updateSetting(setter, value));
         return option;
     }
 
@@ -200,8 +212,14 @@ public final class AirSwapConfigScreen {
                 .binding(defaultValue, getter, setter)
                 .controller(value -> DoubleSliderControllerBuilder.create(value).range(0.0, 10.0).step(0.1))
                 .build();
-        option.addListener((changed, value) -> setter.accept(value));
+        option.addListener((changed, value) -> updateSetting(setter, value));
         return option;
+    }
+
+    private static <T> void updateSetting(Consumer<T> setter, T value) {
+        AirSwapClient.config().setMode(AirSwapConfig.Mode.CUSTOM);
+        setter.accept(value);
+        AirSwapClient.saveConfig();
     }
 
     private static Text name(String key) {
@@ -226,25 +244,7 @@ public final class AirSwapConfigScreen {
     private static void resetDefaults() {
         AirSwapConfig defaults = new AirSwapConfig();
         AirSwapConfig config = AirSwapClient.config();
+        config.setMode(defaults.mode);
         config.enabled = defaults.enabled;
-        config.swapBack = defaults.swapBack;
-        config.swapBackDelay = defaults.swapBackDelay;
-        config.playersOnly = defaults.playersOnly;
-        config.minimumFallDistance = defaults.minimumFallDistance;
-        config.allowSpears = defaults.allowSpears;
-        config.allowWhileGliding = defaults.allowWhileGliding;
-        config.requireBreachMace = defaults.requireBreachMace;
-        config.preferBreachMace = defaults.preferBreachMace;
-        config.allSwords = defaults.allSwords;
-        config.allowedSwords = defaults.allowedSwords;
-        config.onlyHotbar = defaults.onlyHotbar;
-        config.showSwapMessage = defaults.showSwapMessage;
-        config.disableWhenSneaking = defaults.disableWhenSneaking;
-        config.cooldownTicks = defaults.cooldownTicks;
-        config.onlyWhileFalling = defaults.onlyWhileFalling;
-        config.requireAttackCooldown = defaults.requireAttackCooldown;
-        config.requireLineOfSight = defaults.requireLineOfSight;
-        config.avoidNearlyBrokenMaces = defaults.avoidNearlyBrokenMaces;
-        config.preferMostDurableMace = defaults.preferMostDurableMace;
     }
 }

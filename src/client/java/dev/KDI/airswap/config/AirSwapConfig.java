@@ -23,6 +23,7 @@ public final class AirSwapConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Pattern ITEM_ID = Pattern.compile("[a-z0-9_.-]+:[a-z0-9/._-]+");
 
+    public Mode mode = Mode.DEFAULT;
     public boolean enabled = true;
     public boolean swapBack = true;
     public int swapBackDelay = 0;
@@ -47,6 +48,11 @@ public final class AirSwapConfig {
     public boolean avoidNearlyBrokenMaces = true;
     public boolean preferMostDurableMace = false;
 
+    public void setMode(Mode mode) {
+        this.mode = mode == null ? Mode.DEFAULT : mode;
+        applyModeProfile();
+    }
+
     public static AirSwapConfig read(Path path) throws IOException {
         JsonObject root;
         try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
@@ -57,6 +63,12 @@ public final class AirSwapConfig {
             root = parsed.getAsJsonObject();
         }
         AirSwapConfig config = new AirSwapConfig();
+        JsonElement mode = root.get("mode");
+        if (mode != null && mode.isJsonPrimitive() && mode.getAsJsonPrimitive().isString()) {
+            config.mode = Mode.parse(mode.getAsString());
+        } else if (mode == null && !root.isEmpty()) {
+            config.mode = Mode.CUSTOM;
+        }
         config.enabled = bool(root, "enabled", config.enabled);
         config.swapBack = bool(root, "swapBack", config.swapBack);
         config.swapBackDelay = integer(root, "swapBackDelay", config.swapBackDelay, 0, 10);
@@ -91,7 +103,68 @@ public final class AirSwapConfig {
                 config.allowedSwords = valid;
             }
         }
+        config.applyModeProfile();
         return config;
+    }
+
+    private void applyModeProfile() {
+        if (mode == Mode.CUSTOM) {
+            return;
+        }
+        AirSwapConfig defaults = new AirSwapConfig();
+        swapBack = defaults.swapBack;
+        swapBackDelay = defaults.swapBackDelay;
+        playersOnly = defaults.playersOnly;
+        minimumFallDistance = defaults.minimumFallDistance;
+        allowSpears = defaults.allowSpears;
+        allowWhileGliding = defaults.allowWhileGliding;
+        requireBreachMace = defaults.requireBreachMace;
+        preferBreachMace = defaults.preferBreachMace;
+        allSwords = defaults.allSwords;
+        allowedSwords = new ArrayList<>(defaults.allowedSwords);
+        onlyHotbar = defaults.onlyHotbar;
+        showSwapMessage = defaults.showSwapMessage;
+        disableWhenSneaking = defaults.disableWhenSneaking;
+        cooldownTicks = defaults.cooldownTicks;
+        onlyWhileFalling = defaults.onlyWhileFalling;
+        requireAttackCooldown = defaults.requireAttackCooldown;
+        requireLineOfSight = defaults.requireLineOfSight;
+        avoidNearlyBrokenMaces = defaults.avoidNearlyBrokenMaces;
+        preferMostDurableMace = defaults.preferMostDurableMace;
+        if (mode == Mode.LEGIT) {
+            allowWhileGliding = false;
+            disableWhenSneaking = true;
+            cooldownTicks = 1;
+            onlyWhileFalling = true;
+            requireAttackCooldown = true;
+            requireLineOfSight = true;
+        }
+    }
+
+    public enum Mode {
+        LEGIT,
+        DEFAULT,
+        CUSTOM;
+
+        public Mode next() {
+            return switch (this) {
+                case LEGIT -> DEFAULT;
+                case DEFAULT -> CUSTOM;
+                case CUSTOM -> LEGIT;
+            };
+        }
+
+        public String translationKey() {
+            return "config.airswap.mode." + name().toLowerCase(Locale.ROOT);
+        }
+
+        private static Mode parse(String value) {
+            try {
+                return valueOf(value.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException exception) {
+                return CUSTOM;
+            }
+        }
     }
 
     public void write(Path path) throws IOException {
